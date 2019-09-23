@@ -4,16 +4,19 @@ import java.util.*;
 import java.util.concurrent.*;
 
 public class RegistrationServer {
+    
     static class PeerRecord{
         String hostname;
         int cookie;
         boolean flag;
         int TTL = 7200;
-        int portNum;
-        int timesNum;
+        int portNum; // only valid for active peers
+        int timesNum; // peer active count
         String mostRecentTime;
     }
+    
     private static LinkedList<PeerRecord> peerList = new LinkedList<>();
+    
     private void peerRegister(String s){
         String[] params = s.split(" ");
         String h = params[1];
@@ -151,7 +154,8 @@ public class RegistrationServer {
 
     public static void main(String[] args)
     {
-        //decrement TTL and flag peer inactive
+        // decrement TTL and flag peer inactive
+        // peer deactivated in not contacted within 7200 seconds
         Runnable helloRunnable = () -> {
             for(PeerRecord p: peerList){
                 if(p.TTL!=0)
@@ -162,9 +166,12 @@ public class RegistrationServer {
                 }
             }
         };
+        
+        // scheduled to execute TTL decrement every second 
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
         executor.scheduleAtFixedRate(helloRunnable, 0, 1, TimeUnit.SECONDS);
 
+        // port registration
         RegistrationServer server = new RegistrationServer(65423);
     }
 }
